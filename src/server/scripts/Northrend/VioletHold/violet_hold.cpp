@@ -10,6 +10,7 @@
 #include "PassiveAI.h"
 #include "SpellScript.h"
 #include "Player.h"
+#include "MythicMgr.h"
 
 /***********
 ** DEFENSE SYSTEM CRYSTAL

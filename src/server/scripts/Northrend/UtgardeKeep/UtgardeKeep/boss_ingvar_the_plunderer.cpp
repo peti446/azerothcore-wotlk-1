@@ -210,6 +210,9 @@ public:
 
         void JustDied(Unit* /*killer*/)
         {
+            if (Creature* mythicController = ObjectAccessor::GetCreature(*me, pInstance->GetMythicStarterNPCGuid()))
+                mythicController->AI()->DoAction(100);
+
             events.Reset();
             summons.DespawnAll();
             Talk(YELL_DEAD_2);

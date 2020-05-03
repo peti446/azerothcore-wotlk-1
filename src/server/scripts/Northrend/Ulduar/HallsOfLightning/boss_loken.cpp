@@ -119,6 +119,9 @@ public:
 
         void JustDied(Unit*)
         {
+            if (Creature* mythicController = ObjectAccessor::GetCreature(*me, m_pInstance->GetMythicStarterNPCGuid()))
+                mythicController->AI()->DoAction(100);
+
             Talk(SAY_DEATH);
 
             if (m_pInstance)

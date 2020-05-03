@@ -30,6 +30,7 @@ EndScriptData */
 #include "WardenCheckMgr.h"
 #include "WaypointManager.h"
 #include "GameGraveyard.h"
+#include "MythicMgr.h"
 
 class reload_commandscript : public CommandScript
 {
@@ -145,7 +146,8 @@ public:
             { "waypoint_scripts",             SEC_ADMINISTRATOR, true,  &HandleReloadWpScriptsCommand,                  "" },
             { "waypoint_data",                SEC_ADMINISTRATOR, true,  &HandleReloadWpCommand,                         "" },
             { "vehicle_accessory",            SEC_ADMINISTRATOR, true,  &HandleReloadVehicleAccessoryCommand,           "" },
-            { "vehicle_template_accessory",   SEC_ADMINISTRATOR, true,  &HandleReloadVehicleTemplateAccessoryCommand,   "" }
+            { "vehicle_template_accessory",   SEC_ADMINISTRATOR, true,  &HandleReloadVehicleTemplateAccessoryCommand,   "" },
+            { "mythic",                       SEC_ADMINISTRATOR, true,  &HandleReloadMythicCommand,                     "" }
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -158,6 +160,19 @@ public:
     static bool HandleReloadGMTicketsCommand(ChatHandler* /*handler*/, const char* /*args*/)
     {
         sTicketMgr->LoadTickets();
+        return true;
+    }
+
+    static bool HandleReloadMythicCommand(ChatHandler* handler, const char* /*args*/)
+    {
+        sMythicMgr->LoadMythicMapBestTimes();
+        handler->SendGlobalGMSysMessage("DB table `mythic_dungeon_times` reloaded.");
+        sMythicMgr->LoadMythicAffixData();
+        handler->SendGlobalGMSysMessage("DB table `mythic_affix_data` (NOT YET) reloaded.");
+        sMythicMgr->LoadMythicRewardData();
+        handler->SendGlobalGMSysMessage("DB table `mythic_dungeon_rewards` reloaded.");
+        sMythicMgr->ReSetActiveAffixes();
+        handler->SendGlobalGMSysMessage("ReSet active affixes from DB (if changed).");
         return true;
     }
 

@@ -213,6 +213,8 @@ public:
 
         void OnCreatureCreate(Creature* creature)
         {
+            AddAffixAffectedCreature(creature);
+
             if (TeamIdInInstance == TEAM_NEUTRAL)
             {
                 Map::PlayerList const& players = instance->GetPlayers();

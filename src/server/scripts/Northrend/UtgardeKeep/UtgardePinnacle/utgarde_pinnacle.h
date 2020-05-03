@@ -2,6 +2,7 @@
 #define DEF_PINNACLE_H
 
 #include "Opcodes.h"
+#include "MythicMgr.h"
 
 enum Data
 {

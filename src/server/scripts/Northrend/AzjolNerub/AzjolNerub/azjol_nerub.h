@@ -8,6 +8,7 @@
 #include "SpellScript.h"
 #include "SpellAuras.h"
 #include "SpellAuraEffects.h"
+#include "MythicMgr.h"
 
 enum ANData
 {

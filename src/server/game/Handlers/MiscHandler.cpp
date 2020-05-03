@@ -62,6 +62,19 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
     if (GetPlayer()->HasAuraType(SPELL_AURA_PREVENT_RESURRECTION))
         return; // silently return, client should display the error by itself
 
+    if (GetPlayer()->GetMap()->GetDifficulty() == DUNGEON_DIFFICULTY_EPIC)
+    {
+        if (Group* group = GetPlayer()->GetGroup())
+            for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                if (Player* groupPlayer = itr->GetSource())
+                    if (groupPlayer->GetInstanceScript() && groupPlayer->GetInstanceScript()->IsEncounterInProgress() && GetPlayer()->GetMapId() != 599 /*Halls of Stone*/)
+                    {
+                        GetPlayer()->GetSession()->SendNotification("You cannot release your spirit while your team is fighting!");
+                        GetPlayer()->GetSession()->SendNotification("You will automatically revive when everyone is dead and one player revives!");
+                        return;
+                    }
+    }
+
     // the world update order is sessions, players, creatures
     // the netcode runs in parallel with all of these
     // creatures can kill players
@@ -78,6 +91,21 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
 #ifdef ELUNA
     sEluna->OnRepop(GetPlayer());
 #endif
+
+    if (GetPlayer()->GetMap()->GetDifficulty() == DUNGEON_DIFFICULTY_EPIC)
+    {
+        if (Group* group = GetPlayer()->GetGroup())
+            for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                if (Player* groupPlayer = itr->GetSource())
+                {
+                    if (!groupPlayer->IsAlive() && groupPlayer != GetPlayer())
+                    {
+                        groupPlayer->RemovePet(NULL, PET_SAVE_NOT_IN_SLOT, true);
+                        groupPlayer->BuildPlayerRepop();
+                        groupPlayer->RepopAtGraveyard();
+                    }
+                }
+    }
 
     //this is spirit release confirm?
     GetPlayer()->RemovePet(nullptr, PET_SAVE_NOT_IN_SLOT, true);

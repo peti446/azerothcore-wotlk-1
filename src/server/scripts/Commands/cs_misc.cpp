@@ -28,6 +28,8 @@
 #include "BattlegroundMgr.h"
 #include "MapManager.h"
 #include "GameGraveyard.h"
+#include "InstanceScript.h"
+#include "MythicMgr.h"
 
 class misc_commandscript : public CommandScript
 {
@@ -111,9 +113,46 @@ public:
             { "unbindsight",        SEC_ADMINISTRATOR,      false, HandleUnbindSightCommand,            "" },
             { "playall",            SEC_GAMEMASTER,         false, HandlePlayAllCommand,                "" },
             { "skirmish",           SEC_ADMINISTRATOR,      false, HandleSkirmishCommand,               "" },
-            { "mailbox",            SEC_MODERATOR,          false, &HandleMailBoxCommand,               "" }
+            { "mailbox",            SEC_MODERATOR,          false, &HandleMailBoxCommand,               "" },
+            { "mythic",             SEC_PLAYER,             false, &HandleMythicCommand,                "" },
+            { "affixes",            SEC_ADMINISTRATOR,      false, &HandleRerollAffixesCommand,         "" },
         };
         return commandTable;
+    }
+
+    static bool HandleRerollAffixesCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        sMythicMgr->RerollActiveAffixes();
+        handler->PSendSysMessage("Mythic Affixes have been rerolled!");
+        handler->SetSentErrorMessage(true);
+        return true;
+    }
+
+    static bool HandleMythicCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* usingPlayer = handler->GetSession()->GetPlayer();
+
+        // Check Keystone
+        bool hasStone = false;
+        for (auto stone : sMythicMgr->GetMythicKeystoneStore())
+            if (usingPlayer->HasItemCount(stone.second, 1, true))
+                hasStone = true;
+        if (!hasStone)
+            sMythicMgr->GiveRandomKeystone(usingPlayer, true);
+
+        usingPlayer->SetDungeonDifficulty(DUNGEON_DIFFICULTY_EPIC);
+        usingPlayer->SetRaidDifficulty(DUNGEON_DIFFICULTY_EPIC);
+        usingPlayer->SendDungeonDifficulty(usingPlayer->GetGroup());
+
+        if (Group* grp = usingPlayer->GetGroup())
+        {
+            grp->SetDungeonDifficulty(DUNGEON_DIFFICULTY_EPIC);
+            grp->SetRaidDifficulty(DUNGEON_DIFFICULTY_EPIC);
+        }
+
+        handler->PSendSysMessage("Dungeon Difficulty changed: Dungeons set to Mythic! Please re-enter the dungeon, if you were already inside.");
+        handler->SetSentErrorMessage(true);
+        return true;
     }
 
     static bool HandleSkirmishCommand(ChatHandler* handler, char const* args)
@@ -347,6 +386,7 @@ public:
         if (argstr == "on")
         {
             handler->GetSession()->GetPlayer()->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_DEVELOPER);
+            handler->GetSession()->GetPlayer()->UpdateTriggerVisibility();
             handler->GetSession()->SendNotification(LANG_DEV_ON);
             return true;
         }
@@ -354,6 +394,7 @@ public:
         if (argstr == "off")
         {
             handler->GetSession()->GetPlayer()->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_DEVELOPER);
+            handler->GetSession()->GetPlayer()->UpdateTriggerVisibility();
             handler->GetSession()->SendNotification(LANG_DEV_OFF);
             return true;
         }

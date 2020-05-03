@@ -6,6 +6,7 @@
 #define DEF_UTGARDE_KEEP_H
 
 #include "SpellScript.h"
+#include "MythicMgr.h"
 
 enum eData
 {

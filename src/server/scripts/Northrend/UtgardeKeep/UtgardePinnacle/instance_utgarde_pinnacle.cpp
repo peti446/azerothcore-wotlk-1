@@ -81,6 +81,8 @@ public:
         }
         void OnCreatureCreate(Creature* pCreature)
         {
+            AddAffixAffectedCreature(pCreature);
+
             switch(pCreature->GetEntry())
             {
                 case NPC_SVALA_SORROWGRAVE:

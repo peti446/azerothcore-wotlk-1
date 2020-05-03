@@ -3569,6 +3569,9 @@ void SpellMgr::LoadDbcDataCorrections()
             case 24314: // Threatening Gaze
                 spellInfo->AuraInterruptFlags |= AURA_INTERRUPT_FLAG_CAST | AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_JUMP;
                 break;
+        	case 57381: // Unyielding Pain
+            	spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+            	break;
 
 
             /////////////////////////////////////////////
@@ -4918,6 +4921,7 @@ void SpellMgr::LoadDbcDataCorrections()
             case 64389:
             case 64678:
                 spellInfo->Dispel = DISPEL_MAGIC;
+				spellInfo->ChannelInterruptFlags = 0;
                 break;
 
             // FREYA
@@ -6500,6 +6504,14 @@ void SpellMgr::LoadDbcDataCorrections()
             case 8983:  // Druid - Bash  - R3
                 spellInfo->AttributesEx7 |= SPELL_ATTR7_INTERRUPT_ONLY_NONPLAYER;
                 break;
+        	// Mythic: Affix Bursting
+        	case 22682:
+            	spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
+            	break;
+        	// Mythic: Affix Frenzy
+        	case 3136:
+            	spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+            	break;
         }
 
         switch (spellInfo->SpellFamilyName)

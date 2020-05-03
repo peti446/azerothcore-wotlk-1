@@ -4,6 +4,8 @@
 
 #define MAX_ENCOUNTER           5
 
+#include "MythicMgr.h"
+
 enum Data64
 {
     DATA_ELDER_NADOX,

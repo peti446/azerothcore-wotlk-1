@@ -18,6 +18,8 @@
 #include "WorldSession.h"
 #include "Opcodes.h"
 #include "Spell.h"
+#include "SpellAuras.h"
+#include "MythicMgr.h"
 
 void InstanceScript::SaveToDB()
 {
@@ -467,4 +469,45 @@ std::string InstanceScript::GetBossStateName(uint8 state)
         default:
             return "INVALID";
     }
+}
+
+void InstanceScript::StartMythic(uint8 level, Creature* starterNPC)
+{
+    mythicLevel = level;
+    starterNPCGuid = starterNPC->GetGUID();
+
+    for (uint64 cr : GetAffixAffectedCreatures())
+        if (Unit* unit = ObjectAccessor::FindUnit(cr))
+            if (Creature* creature = unit->ToCreature())
+                sMythicMgr->ApplyAffix(creature, GetMythicLevel());
+}
+
+void InstanceScript::CheckCreatureAffixes()
+{
+    if (!IsMythicRunActive())
+        return;
+
+    for (uint64 cr : GetAffixAffectedCreatures())
+        if (Unit* unit = ObjectAccessor::FindUnit(cr))
+            if (Creature* creature = unit->ToCreature())
+                sMythicMgr->ApplyAffix(creature, GetMythicLevel());
+}
+
+void InstanceScript::FinishMythic()
+{
+    // More Cleanup needed?
+    mythicLevel = 0;
+    starterNPCGuid = 0;
+    npcs.clear();
+}
+
+void InstanceScript::AddAffixAffectedCreature(Creature* creature)
+{
+    if (sMythicMgr->IsIgnoredCreature(creature))
+        return;
+
+    npcs.insert(creature->GetGUID());
+
+    if (IsMythicRunActive())
+        CheckCreatureAffixes();
 }

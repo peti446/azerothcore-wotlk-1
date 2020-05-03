@@ -34,7 +34,8 @@ public:
             { "stats",          SEC_MODERATOR,      true,   &HandleInstanceStatsCommand,        "" },
             { "savedata",       SEC_ADMINISTRATOR,  false,  &HandleInstanceSaveDataCommand,     "" },
             { "setbossstate",   SEC_MODERATOR,      true,   &HandleInstanceSetBossStateCommand, "" },
-            { "getbossstate",   SEC_MODERATOR,      true,   &HandleInstanceGetBossStateCommand, "" }
+            { "getbossstate",   SEC_MODERATOR,      true,   &HandleInstanceGetBossStateCommand, "" },
+            { "mythicinfo",     SEC_MODERATOR,      false,  &HandleMythicInfoCommand,           "" }
         };
 
         static std::vector<ChatCommand> commandTable =
@@ -55,6 +56,30 @@ public:
             ss << hours << "h ";
         ss << minute << 'm';
         return ss.str();
+    }
+
+    static bool HandleMythicInfoCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* usingPlayer = handler->GetSession()->GetPlayer();
+        InstanceScript* instance = usingPlayer->GetInstanceScript();
+        if (!instance)
+        {
+            handler->PSendSysMessage("Not in a Dungeon!");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+        if (!instance->IsMythicRunActive())
+        {
+            handler->PSendSysMessage("No Mythic Run active!");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        uint8 level = instance->GetMythicLevel();
+
+        handler->PSendSysMessage("Mythic Run Level: %u", level);
+        handler->SetSentErrorMessage(true);
+        return true;
     }
 
     static bool HandleInstanceListBindsCommand(ChatHandler* handler, char const* /*args*/)

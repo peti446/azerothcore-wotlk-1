@@ -2848,7 +2848,7 @@ bool InstanceMap::Reset(uint8 method, std::list<uint32>* globalResetSkipList)
 
 void InstanceMap::PermBindAllPlayers()
 {
-    if (!IsDungeon())
+    if (!IsDungeon() || IsMythic())
         return;
 
     InstanceSave* save = sInstanceSaveMgr->GetInstanceSave(GetInstanceId());

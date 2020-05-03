@@ -11,7 +11,8 @@ enum Spells
     SPELL_BATTLE_SHOUT              = 31403,
     SPELL_CHARGE                    = 60067,
     SPELL_FRIGHTENING_SHOUT         = 19134,
-    SPELL_WHIRLWIND                 = 38618
+    SPELL_WHIRLWIND                 = 38618,
+    SPELL_FROZEN_PRISON             = 47543
 };
 
 enum Events
@@ -60,7 +61,7 @@ public:
             events.ScheduleEvent(EVENT_FRIGHTENING_SHOUT, 10000);
             events.ScheduleEvent(EVENT_WHIRLWIND, 15000);
             events.ScheduleEvent(EVENT_COMMANDER_CHARGE, 1000);
-            me->RemoveAllAuras();
+            me->RemoveAurasDueToSpell(SPELL_FROZEN_PRISON);
         }
 
         void KilledUnit(Unit*)

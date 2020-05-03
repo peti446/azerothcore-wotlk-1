@@ -6,6 +6,7 @@
 #define DEF_FORGE_OF_SOULS_H
 
 #include "GridNotifiers.h"
+#include "MythicMgr.h"
 
 enum Data
 {

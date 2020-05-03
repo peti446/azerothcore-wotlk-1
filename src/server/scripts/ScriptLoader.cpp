@@ -582,6 +582,9 @@ void AddSC_chat_log();
 void AddSC_character_creation();
 void AddSC_action_ip_logger();
 
+// custom
+void AddSC_MythicScripts();
+
 #endif
 
 void AddSpellScripts()
@@ -1196,6 +1199,6 @@ void AddOutdoorPvPScripts()
 void AddCustomScripts()
 {
 #ifdef SCRIPTS
-    //~ AddSC_MySuperScript();
+    AddSC_MythicScripts();
 #endif
 }

@@ -5660,10 +5660,11 @@ void Player::RepopAtGraveyard()
     // Such zones are considered unreachable as a ghost and the player must be automatically revived
     // Xinef: Get Transport Check is not needed
     if ((!IsAlive() && zone && zone->flags & AREA_FLAG_NEED_FLY) /*|| GetTransport()*/ || GetPositionZ() < GetMap()->GetMinHeight(GetPositionX(), GetPositionY()))
-    {
-        ResurrectPlayer(0.5f);
-        SpawnCorpseBones();
-    }
+        if (!GetMap()->IsMythic())
+        {
+            ResurrectPlayer(0.5f);
+            SpawnCorpseBones();
+        }
 
     GraveyardStruct const* ClosestGrave = nullptr;
 
@@ -5680,6 +5681,37 @@ void Player::RepopAtGraveyard()
 
     // stop countdown until repop
     m_deathTimer = 0;
+
+    if (GetMap()->IsMythic())
+    {
+        if (GetInstanceScript()->IsMythicRunActive())
+        {
+            ClosestGrave = NULL;
+            AreaTriggerTeleport const* at = sObjectMgr->GetMapEntranceTrigger(GetMapId());
+
+            if (GetMapId() == 608) // Violet Citadel
+                TeleportTo(at->target_mapId, 1829.329834f, 804.055847f, 44.4, 6.2f);
+            else
+                TeleportTo(at->target_mapId, at->target_X, at->target_Y, at->target_Z, at->target_Orientation);
+
+            SpawnCorpseBones();
+            ResurrectPlayer(100.0f);
+            CombatStop();
+            getThreatManager().resetAllAggro();
+
+            if (Aura* speed = AddAura(56354, this)) // 56354 Sprint 200%
+            {
+                if (GetInstanceScript()->GetBossState(0) == DONE)
+                    speed->SetDuration(35 * IN_MILLISECONDS);
+                else
+                    speed->SetDuration(20 * IN_MILLISECONDS);
+            }
+
+            RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_IS_OUT_OF_BOUNDS);
+
+            return;
+        }
+    }
 
     // if no grave found, stay at the current location
     // and don't show spirit healer location

@@ -102,6 +102,11 @@ public:
             }
         }
 
+        void OnCreatureCreate(Creature* creature)
+        {
+            AddAffixAffectedCreature(creature);
+        }
+
         void OnGameObjectRemove(GameObject* gameobject)
         {
             switch (gameobject->GetEntry())

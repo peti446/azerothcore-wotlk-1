@@ -212,6 +212,20 @@ public:
                             me->GetMotionMaster()->MovePoint(0, BoatStructure[BoatOrder[BoatNum]].MoveX, BoatStructure[BoatOrder[BoatNum]].MoveY, BoatStructure[BoatOrder[BoatNum]].MoveZ);
                             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                             summons.DespawnAll();
+                        	if (me->GetMap()->IsMythic())
+                        	{
+                            	if (Creature* trial = me->FindNearestCreature(NPC_MYTHIC_EONARS_TRIAL, 100.f))
+                                	trial->DespawnOrUnsummon(1);
+
+                            	std::list<Creature*> explos;
+                            	me->GetCreaturesWithEntryInRange(explos, 100.f, NPC_MYTHIC_EXPLOSION_TRIGGER);
+                            	for (Creature* explosion : explos)
+                                	if (explosion)
+                                    	explosion->DespawnOrUnsummon(1);
+
+                            	if (InstanceScript* inst = me->GetInstanceScript())
+                                	inst->DoRemoveAurasDueToSpellOnPlayers(MYTHIC_SPELL_BEACON_OF_HOPE_TARGET_SELECT);
+                        	}
 
                             // Spawn flames in previous boat if any
                             if (BoatNum) // different than 0
@@ -223,6 +237,7 @@ public:
 
                             BoatNum++;
                         }
+
 
                         events.RepeatEvent(1000);
                         break;
@@ -322,6 +337,9 @@ public:
 
         void JustDied(Unit*  /*pKiller*/)
         {
+            if (Creature* mythicController = ObjectAccessor::GetCreature(*me, pInstance->GetMythicStarterNPCGuid()))
+                mythicController->AI()->DoAction(100);
+
             Talk(SAY_DEATH);
             summons.DespawnAll();
             summons2.DespawnAll();

@@ -122,7 +122,7 @@ class InstanceScript : public ZoneScript
 {
 public:
 
-    explicit InstanceScript(Map* map) : instance(map), completedEncounters(0) {}
+    explicit InstanceScript(Map* map) : instance(map), completedEncounters(0), mythicLevel(0) {}
 
     virtual ~InstanceScript() {}
 
@@ -212,6 +212,15 @@ public:
 
     // Allows to perform particular actions
     virtual void DoAction(int32 /*action*/) {}
+
+    void StartMythic(uint8 level, Creature* starterNPC);
+    void FinishMythic();
+    void AddAffixAffectedCreature(Creature* creature);
+    bool IsMythicRunActive() { return GetMythicLevel() > 0; };
+    uint8 GetMythicLevel() { return mythicLevel; };
+    uint64 GetMythicStarterNPCGuid() { return starterNPCGuid; }
+    void CheckCreatureAffixes();
+    std::set<uint64> const& GetAffixAffectedCreatures() { return npcs; }
 protected:
     void SetBossNumber(uint32 number) { bosses.resize(number); }
     void LoadDoorData(DoorData const* data);
@@ -230,6 +239,11 @@ private:
     DoorInfoMap doors;
     MinionInfoMap minions;
     uint32 completedEncounters; // completed encounter mask, bit indexes are DungeonEncounter.dbc boss numbers, used for packets
+
+    uint8 mythicLevel;
+    std::set<uint64> npcGuids;
+    std::set<uint64> npcs;
+    uint64 starterNPCGuid;
 };
 
 template<class AI, class T>

@@ -107,6 +107,9 @@ public:
                     if (Creature* cr = ObjectAccessor::GetCreature(*me, pInstance->GetData64(DATA_ARTHAS)))
                         cr->AI()->DoAction(ACTION_KILLED_MALGANIS);
 
+                    if (Creature* mythicController = ObjectAccessor::GetCreature(*me, pInstance->GetMythicStarterNPCGuid()))
+                        mythicController->AI()->DoAction(100);
+
                     // give credit to players
                     me->CastSpell(me, 58630, true);
                 }

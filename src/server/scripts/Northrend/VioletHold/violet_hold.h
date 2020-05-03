@@ -7,6 +7,8 @@
 
 #define MAX_ENCOUNTER 3
 
+#include "MythicMgr.h"
+
 enum Creatures
 {
     NPC_TELEPORTATION_PORTAL        = 31011,

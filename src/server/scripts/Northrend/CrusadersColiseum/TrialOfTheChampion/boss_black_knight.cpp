@@ -303,6 +303,9 @@ public:
 
         void JustDied(Unit* /*killer*/)
         {
+            if (Creature* mythicController = ObjectAccessor::GetCreature(*me, pInstance->GetMythicStarterNPCGuid()))
+                mythicController->AI()->DoAction(100);
+
             me->CastSpell((Unit*)NULL, SPELL_BK_KILL_CREDIT, true);
             Talk(TEXT_BK_DEATH);
             if( pInstance )

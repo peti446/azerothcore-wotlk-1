@@ -196,6 +196,19 @@ public:
                 case EVENT_MAGUS_GRAVITY_WELL:
                     me->CastSpell(me, SPELL_GRAVITY_WELL, false);
                     events.ScheduleEvent(EVENT_MAGUS_GRAVITY_WELL, 15000);
+                    if (me->GetMap()->IsMythic())
+                    {
+                        for (auto ref : me->getThreatManager().getThreatList())
+                        {
+                            Unit* unit = ObjectAccessor::GetUnit(*me, ref->getUnitGuid());
+                            if (unit && (unit->GetTypeId() == TYPEID_PLAYER))
+                            {
+                                if (Aura* explo = unit->GetAura(MYTHIC_SPELL_EXPLOSIVE_AURA))
+                                    if (AuraEffect* aurEff = explo->GetEffect(EFFECT_0))
+                                        aurEff->SetPeriodicTimer(6000);
+                            }
+                        }
+                    }
                     break;
                 case EVENT_MAGUS_FAIL_ACHIEVEMENT:
                     achievement = false;

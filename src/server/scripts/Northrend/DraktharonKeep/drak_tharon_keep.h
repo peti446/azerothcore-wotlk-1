@@ -7,6 +7,7 @@
 
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
+#include "MythicMgr.h"
 
 enum Data
 {

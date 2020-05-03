@@ -88,6 +88,9 @@ public:
 
         void JustDied(Unit* killer)
         {
+            if (Creature* mythicController = ObjectAccessor::GetCreature(*me, instance->GetMythicStarterNPCGuid()))
+                mythicController->AI()->DoAction(100);
+
             Talk(SAY_DEATH);
             BossAI::JustDied(killer);
         }

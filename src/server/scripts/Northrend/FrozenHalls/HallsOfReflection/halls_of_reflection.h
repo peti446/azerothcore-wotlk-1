@@ -13,6 +13,7 @@
 #include "ScriptedGossip.h"
 #include "SpellScript.h"
 #include "ScriptMgr.h"
+#include "MythicMgr.h"
 
 enum Data
 {

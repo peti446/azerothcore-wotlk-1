@@ -6,6 +6,7 @@
 #define DEF_GUNDRAK_H
 
 #include "SpellScript.h"
+#include "MythicMgr.h"
 
 enum Data
 {

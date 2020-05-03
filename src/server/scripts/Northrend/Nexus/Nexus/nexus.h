@@ -11,6 +11,7 @@
 #include "SpellAuras.h"
 #include "GridNotifiers.h"
 #include "GameEventMgr.h"
+#include "MythicMgr.h"
 
 enum eTypes
 {

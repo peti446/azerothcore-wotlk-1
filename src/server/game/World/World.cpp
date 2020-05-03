@@ -78,6 +78,7 @@
 #include "ServerMotd.h"
 #include "GameGraveyard.h"
 #include <VMapManager2.h>
+#include "MythicMgr.h"
 
 #ifdef ELUNA
 #include "LuaEngine.h"
@@ -2039,6 +2040,8 @@ void World::SetInitialWorldSettings()
         }
     }
 
+    sMythicMgr->Initialize();
+
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
     sLog->outString();
     sLog->outError("WORLD: World initialized in %u minutes %u seconds", (startupDuration / 60000), ((startupDuration % 60000) / 1000)); // outError for red color in console
@@ -2951,6 +2954,9 @@ void World::ResetDailyQuests()
 
     // change available dailies
     sPoolMgr->ChangeDailyQuests();
+
+    // Change daily affixes
+    sMythicMgr->RerollActiveAffixes();
 }
 
 void World::LoadDBAllowedSecurityLevel()

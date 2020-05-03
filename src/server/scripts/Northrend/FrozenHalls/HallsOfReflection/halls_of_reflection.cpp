@@ -1414,6 +1414,8 @@ public:
                 {
                     Talk(SAY_LK_NOWHERE_TO_RUN);
                     pInstance->SetData(DATA_LICH_KING, DONE);
+                    if (Creature* mythicController = ObjectAccessor::GetCreature(*me, pInstance->GetMythicStarterNPCGuid()))
+                        mythicController->AI()->DoAction(100);
                 }
             }
         }

@@ -6,6 +6,7 @@
 #define DEF_TOC_H
 
 #include "CombatAI.h"
+#include "MythicMgr.h"
 
 enum eData
 {

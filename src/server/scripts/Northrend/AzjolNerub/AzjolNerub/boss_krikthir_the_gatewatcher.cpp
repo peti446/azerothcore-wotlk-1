@@ -95,7 +95,8 @@ public:
                 events2.ScheduleEvent(EVENT_KRIK_START_WAVE, 10000);
                 events2.ScheduleEvent(EVENT_KRIK_START_WAVE, 40000);
                 events2.ScheduleEvent(EVENT_KRIK_START_WAVE, 70000);
-                events2.ScheduleEvent(EVENT_KRIK_ENTER_COMBAT, 100000);
+				if (!me->GetMap()->IsMythic())
+                	events2.ScheduleEvent(EVENT_KRIK_ENTER_COMBAT, 100000);
                 events2.ScheduleEvent(EVENT_KRIK_CHECK_EVADE, 5000);
 
                 events.ScheduleEvent(EVENT_KRIK_HEALTH_CHECK, 1000);

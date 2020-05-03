@@ -5,6 +5,8 @@
 #ifndef DEF_HALLS_OF_LIGHTNING_H
 #define DEF_HALLS_OF_LIGHTNING_H
 
+#include "MythicMgr.h"
+
 enum HoLEvents
 {
     TYPE_BJARNGRIM          = 0,

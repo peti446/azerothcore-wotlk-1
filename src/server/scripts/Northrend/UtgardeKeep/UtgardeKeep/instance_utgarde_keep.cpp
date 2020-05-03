@@ -88,6 +88,8 @@ public:
 
         void OnCreatureCreate(Creature* creature)
         {
+            AddAffixAffectedCreature(creature);
+
             switch(creature->GetEntry())
             {
                 case NPC_KELESETH:

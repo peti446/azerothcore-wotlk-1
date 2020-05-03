@@ -5,6 +5,8 @@
 #ifndef DEF_CULLING_OF_STRATHOLME_H
 #define DEF_CULLING_OF_STRATHOLME_H
 
+#include "MythicMgr.h"
+
 enum Data
 {
     DATA_ARTHAS_EVENT,
