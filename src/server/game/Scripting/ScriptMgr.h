@@ -960,6 +960,15 @@ public:
     // After player enters queue for Arena
     virtual void OnPlayerJoinArena(Player* /*player*/) { }
 
+    //Called when trying to get a team ID of a slot > 2 (This is for custom teams created by modules)
+    virtual void GetCustomGetArenaTeamId(const Player* /*player*/, uint8 /*slot*/, uint32& /*teamID*/) const { }
+
+    //Called when trying to get players personal rating of an arena slot > 2 (This is for custom teams created by modules)
+    virtual void GetCustomArenaPersonalRating(const Player* /*player*/, uint8 /*slot*/, uint32& /*rating*/) const { }
+
+    //Called after the normal slots (0..2) for arena have been evaluated so that custom arena teams could modify it if nececasry
+    virtual void OnGetMaxPersonalArenaRatingRequirement(const Player* /*player*/, uint32 /*minSlot*/, uint32& /*maxArenaRating*/) const {}
+
     //After looting item
     virtual void OnLootItem(Player* /*player*/, Item* /*item*/, uint32 /*count*/, uint64 /*lootguid*/) { }
 
@@ -1171,6 +1180,21 @@ public:
     virtual void OnCheckNormalMatch(BattlegroundQueue* /*queue*/, uint32& /*Coef*/, Battleground* /*bgTemplate*/, BattlegroundBracketId /*bracket_id*/, uint32& /*minPlayers*/, uint32& /*maxPlayers*/) { }
 
     virtual bool CanSendMessageQueue(BattlegroundQueue* /*queue*/, Player* /*leader*/, Battleground* /*bg*/, PvPDifficultyEntry const* /*bracketEntry*/) { return true; }
+};
+
+class ArenaTeamScript : public ScriptObject
+{
+protected:
+    ArenaTeamScript(const char* name);
+
+public:
+    bool IsDatabaseBound() const { return false; };
+
+    virtual void OnGetSlotByType(const uint32 /*type*/, uint8& /*slot*/) {}
+    virtual void OnGetArenaPoints(ArenaTeam* /*team*/, float& /*points*/) {}
+    virtual void OnTypeIDToQueueID(const BattlegroundTypeId /*bgTypeId*/, const uint8 /*arenaType*/, uint32& /*queueTypeID*/) {}
+    virtual void OnQueueIdToArenaType(const BattlegroundQueueTypeId /*bgQueueTypeId*/, uint8& /*ArenaType*/) {}
+    virtual void OnSetArenaMaxPlayersPerTeam(const uint8 /*arenaType*/, uint32& /*maxPlayerPerTeam*/) {}
 };
 
 class SpellSC : public ScriptObject
@@ -1460,6 +1484,9 @@ public: /* PlayerScript */
     void OnEquip(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
     void OnPlayerJoinBG(Player* player);
     void OnPlayerJoinArena(Player* player);
+	void GetCustomGetArenaTeamId(const Player* player, uint8 slot, uint32& teamID) const;
+    void GetCustomArenaPersonalRating(const Player* player, uint8 slot, uint32& rating) const;
+    void OnGetMaxPersonalArenaRatingRequirement(const Player* player, uint32 minSlot, uint32& maxArenaRating) const;
     void OnLootItem(Player* player, Item* item, uint32 count, uint64 lootguid);
     void OnCreateItem(Player* player, Item* item, uint32 count);
     void OnQuestRewardItem(Player* player, Item* item, uint32 count);
@@ -1572,6 +1599,14 @@ public: /* BGScript */
     void OnCheckNormalMatch(BattlegroundQueue* queue, uint32& Coef, Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32& minPlayers, uint32& maxPlayers);
     bool CanSendMessageQueue(BattlegroundQueue* queue, Player* leader, Battleground* bg, PvPDifficultyEntry const* bracketEntry);
 
+public: /* Arena Team Script */
+
+    void OnGetSlotByType(const uint32 type, uint8& slot);
+    void OnGetArenaPoints(ArenaTeam* at, float& points);
+    void OnArenaTypeIDToQueueID(const BattlegroundTypeId bgTypeId, const uint8 arenaType, uint32& queueTypeID);
+    void OnArenaQueueIdToArenaType(const BattlegroundQueueTypeId bgQueueTypeId, uint8& ArenaType);
+    void OnSetArenaMaxPlayersPerTeam(const uint8 arenaType, uint32& maxPlayerPerTeam);
+
 public: /* SpellSC */
 
     void OnCalcMaxDuration(Aura const* aura, int32& maxDuration);
@@ -1638,61 +1673,63 @@ public:
         for(ScriptVectorIterator it = ALScripts.begin(); it != ALScripts.end(); ++it)
         {
             TScript* const script = *it;
-
-            script->checkValidity();
-
-            if (script->IsDatabaseBound())
+            for (ScriptVectorIterator it = ALScripts.begin(); it != ALScripts.end(); ++it)
             {
 
-                if (!_checkMemory(script))
-                    return;
+                script->checkValidity();
 
-                // Get an ID for the script. An ID only exists if it's a script that is assigned in the database
-                // through a script name (or similar).
-                uint32 id = sObjectMgr->GetScriptId(script->GetName().c_str());
-                if (id)
+                if (script->IsDatabaseBound())
                 {
-                    // Try to find an existing script.
-                    bool existing = false;
-                    for (ScriptMapIterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
-                    {
-                        // If the script names match...
-                        if (it->second->GetName() == script->GetName())
-                        {
-                            // ... It exists.
-                            existing = true;
-                            break;
-                        }
-                    }
+                    if (!_checkMemory(script))
+                        return;
 
-                    // If the script isn't assigned -> assign it!
-                    if (!existing)
+                    // Get an ID for the script. An ID only exists if it's a script that is assigned in the database
+                    // through a script name (or similar).
+                    uint32 id = sObjectMgr->GetScriptId(script->GetName().c_str());
+                    if (id)
                     {
-                        ScriptPointerList[id] = script;
-                        sScriptMgr->IncrementScriptCount();
+                        // Try to find an existing script.
+                        bool existing = false;
+                        for (ScriptMapIterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
+                        {
+                            // If the script names match...
+                            if (it->second->GetName() == script->GetName())
+                            {
+                                // ... It exists.
+                                existing = true;
+                                break;
+                            }
+                        }
+
+                        // If the script isn't assigned -> assign it!
+                        if (!existing)
+                        {
+                            ScriptPointerList[id] = script;
+                            sScriptMgr->IncrementScriptCount();
+                        }
+                        else
+                        {
+                            // If the script is already assigned -> delete it!
+                            sLog->outError("Script named '%s' is already assigned (two or more scripts have the same name), so the script can't work, aborting...",
+                                           script->GetName().c_str());
+
+                            ABORT(); // Error that should be fixed ASAP.
+                        }
                     }
                     else
                     {
-                        // If the script is already assigned -> delete it!
-                        sLog->outError("Script named '%s' is already assigned (two or more scripts have the same name), so the script can't work, aborting...",
-                                       script->GetName().c_str());
-
-                        ABORT(); // Error that should be fixed ASAP.
+                        // The script uses a script name from database, but isn't assigned to anything.
+                        if (script->GetName().find("Smart") == std::string::npos)
+                            sLog->outErrorDb("Script named '%s' is not assigned in the database.",
+                                             script->GetName().c_str());
                     }
                 }
                 else
                 {
-                    // The script uses a script name from database, but isn't assigned to anything.
-                    if (script->GetName().find("Smart") == std::string::npos)
-                        sLog->outErrorDb("Script named '%s' is not assigned in the database.",
-                                         script->GetName().c_str());
+                    // We're dealing with a code-only script; just add it.
+                    ScriptPointerList[_scriptIdCounter++] = script;
+                    sScriptMgr->IncrementScriptCount();
                 }
-            }
-            else
-            {
-                // We're dealing with a code-only script; just add it.
-                ScriptPointerList[_scriptIdCounter++] = script;
-                sScriptMgr->IncrementScriptCount();
             }
         }
     }
