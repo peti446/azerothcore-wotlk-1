@@ -960,8 +960,17 @@ public:
     // After player enters queue for Arena
     virtual void OnPlayerJoinArena(Player* /*player*/) { }
 
-    //After looting item
-    virtual void OnLootItem(Player* /*player*/, Item* /*item*/, uint32 /*count*/, uint64 /*lootguid*/) { }
+        //Called when trying to get a team ID of a slot > 2 (This is for custom teams created by modules)
+        virtual void GetCustomGetArenaTeamId(const Player* /*player*/, uint8 /*slot*/, uint32& /*teamID*/) const { }
+
+        //Called when trying to get players personal rating of an arena slot > 2 (This is for custom teams created by modules)
+        virtual void GetCustomArenaPersonalRating(const Player* /*player*/, uint8 /*slot*/, uint32& /*rating*/) const { }
+
+        //Called after the normal slots (0..2) for arena have been evaluated so that custom arena teams could modify it if nececasry
+        virtual void OnGetMaxPersonalArenaRatingRequirement(const Player* /*player*/, uint32 /*minSlot*/, uint32& /*maxArenaRating*/) const {}
+
+        //After looting item
+        virtual void OnLootItem(Player* /*player*/, Item* /*item*/, uint32 /*count*/, uint64 /*lootguid*/) { }
 
     //After creating item (eg profession item creation)
     virtual void OnCreateItem(Player* /*player*/, Item* /*item*/, uint32 /*count*/) { }
@@ -1171,6 +1180,21 @@ public:
     virtual void OnCheckNormalMatch(BattlegroundQueue* /*queue*/, uint32& /*Coef*/, Battleground* /*bgTemplate*/, BattlegroundBracketId /*bracket_id*/, uint32& /*minPlayers*/, uint32& /*maxPlayers*/) { }
 
     virtual bool CanSendMessageQueue(BattlegroundQueue* /*queue*/, Player* /*leader*/, Battleground* /*bg*/, PvPDifficultyEntry const* /*bracketEntry*/) { return true; }
+};
+
+class ArenaTeamScript : public ScriptObject
+{
+protected:
+    ArenaTeamScript(const char* name);
+
+public:
+    bool IsDatabaseBound() const { return false; };
+
+    virtual void OnGetSlotByType(const uint32 /*type*/, uint8& /*slot*/) {}
+    virtual void OnGetArenaPoints(ArenaTeam* /*team*/, float& /*points*/) {}
+    virtual void OnTypeIDToQueueID(const BattlegroundTypeId /*bgTypeId*/, const uint8 /*arenaType*/, uint32& /*queueTypeID*/) {}
+    virtual void OnQueueIdToArenaType(const BattlegroundQueueTypeId /*bgQueueTypeId*/, uint8& /*ArenaType*/) {}
+    virtual void OnSetArenaMaxPlayersPerTeam(const uint8 /*arenaType*/, uint32& /*maxPlayerPerTeam*/) {}
 };
 
 class SpellSC : public ScriptObject
@@ -1407,76 +1431,79 @@ public: /* AchievementCriteriaScript */
 
 public: /* PlayerScript */
 
-    void OnBeforePlayerUpdate(Player* player, uint32 p_time);
-    void OnPlayerReleasedGhost(Player* player);
-    void OnPVPKill(Player* killer, Player* killed);
-    void OnCreatureKill(Player* killer, Creature* killed);
-    void OnCreatureKilledByPet(Player* petOwner, Creature* killed);
-    void OnPlayerKilledByCreature(Creature* killer, Player* killed);
-    void OnPlayerLevelChanged(Player* player, uint8 oldLevel);
-    void OnPlayerFreeTalentPointsChanged(Player* player, uint32 newPoints);
-    void OnPlayerTalentsReset(Player* player, bool noCost);
-    void OnPlayerMoneyChanged(Player* player, int32& amount);
-    void OnGivePlayerXP(Player* player, uint32& amount, Unit* victim);
-    void OnPlayerReputationChange(Player* player, uint32 factionID, int32& standing, bool incremental);
-    void OnPlayerReputationRankChange(Player* player, uint32 factionID, ReputationRank newRank, ReputationRank oldRank, bool increased);
-    void OnPlayerLearnSpell(Player* player, uint32 spellID);
-    void OnPlayerForgotSpell(Player* player, uint32 spellID);
-    void OnPlayerDuelRequest(Player* target, Player* challenger);
-    void OnPlayerDuelStart(Player* player1, Player* player2);
-    void OnPlayerDuelEnd(Player* winner, Player* loser, DuelCompleteType type);
-    void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg);
-    void OnBeforeSendChatMessage(Player* player, uint32& type, uint32& lang, std::string& msg);
-    void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Player* receiver);
-    void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Group* group);
-    void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Guild* guild);
-    void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Channel* channel);
-    void OnPlayerEmote(Player* player, uint32 emote);
-    void OnPlayerTextEmote(Player* player, uint32 textEmote, uint32 emoteNum, uint64 guid);
-    void OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck);
-    void OnPlayerLogin(Player* player);
-    void OnPlayerLoadFromDB(Player* player);
-    void OnPlayerLogout(Player* player);
-    void OnPlayerCreate(Player* player);
-    void OnPlayerSave(Player* player);
-    void OnPlayerDelete(uint64 guid, uint32 accountId);
-    void OnPlayerFailedDelete(uint64 guid, uint32 accountId);
-    void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent);
-    void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
-    void OnPlayerUpdateArea(Player* player, uint32 oldArea, uint32 newArea);
-    bool OnBeforePlayerTeleport(Player* player, uint32 mapid, float x, float y, float z, float orientation, uint32 options, Unit* target);
-    void OnPlayerUpdateFaction(Player* player);
-    void OnPlayerAddToBattleground(Player* player, Battleground* bg);
-    void OnPlayerRemoveFromBattleground(Player* player, Battleground* bg);
-    void OnAchievementComplete(Player* player, AchievementEntry const* achievement);
-    void OnCriteriaProgress(Player* player, AchievementCriteriaEntry const* criteria);
-    void OnAchievementSave(SQLTransaction& trans, Player* player, uint16 achiId, CompletedAchievementData achiData);
-    void OnCriteriaSave(SQLTransaction& trans, Player* player, uint16 critId, CriteriaProgress criteriaData);
-    void OnGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action);
-    void OnGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, const char* code);
-    void OnPlayerBeingCharmed(Player* player, Unit* charmer, uint32 oldFactionId, uint32 newFactionId);
-    void OnAfterPlayerSetVisibleItemSlot(Player* player, uint8 slot, Item* item);
-    void OnAfterPlayerMoveItemFromInventory(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
-    void OnEquip(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
-    void OnPlayerJoinBG(Player* player);
-    void OnPlayerJoinArena(Player* player);
-    void OnLootItem(Player* player, Item* item, uint32 count, uint64 lootguid);
-    void OnCreateItem(Player* player, Item* item, uint32 count);
-    void OnQuestRewardItem(Player* player, Item* item, uint32 count);
-    void OnBeforeBuyItemFromVendor(Player* player, uint64 vendorguid, uint32 vendorslot, uint32& item, uint8 count, uint8 bag, uint8 slot);
-    void OnAfterStoreOrEquipNewItem(Player* player, uint32 vendorslot, uint32& item, uint8 count, uint8 bag, uint8 slot, ItemTemplate const* pProto, Creature* pVendor, VendorItem const* crItem, bool bStore);
-    void OnAfterUpdateMaxPower(Player* player, Powers& power, float& value);
-    void OnAfterUpdateMaxHealth(Player* player, float& value);
-    void OnBeforeUpdateAttackPowerAndDamage(Player* player, float& level, float& val2, bool ranged);
-    void OnAfterUpdateAttackPowerAndDamage(Player* player, float& level, float& base_attPower, float& attPowerMod, float& attPowerMultiplier, bool ranged);
-    void OnBeforeInitTalentForLevel(Player* player, uint8& level, uint32& talentPointsForLevel);
-    void OnFirstLogin(Player* player);
-    void OnPlayerCompleteQuest(Player* player, Quest const* quest);
-    bool CanJoinInBattlegroundQueue(Player* player, uint64 BattlemasterGuid, BattlegroundTypeId BGTypeID, uint8 joinAsGroup, GroupJoinBattlegroundResult& err);
-    void OnBeforeTempSummonInitStats(Player* player, TempSummon* tempSummon, uint32& duration);
-    void OnBeforeGuardianInitStatsForLevel(Player* player, Guardian* guardian, CreatureTemplate const* cinfo, PetType& petType);
-    void OnAfterGuardianInitStatsForLevel(Player* player, Guardian* guardian);
-    void OnBeforeLoadPetFromDB(Player* player, uint32& petentry, uint32& petnumber, bool& current, bool& forceLoadFromDB);
+        void OnBeforePlayerUpdate(Player* player, uint32 p_time);
+        void OnPlayerReleasedGhost(Player* player);
+        void OnPVPKill(Player* killer, Player* killed);
+        void OnCreatureKill(Player* killer, Creature* killed);
+        void OnCreatureKilledByPet(Player* petOwner, Creature* killed);
+        void OnPlayerKilledByCreature(Creature* killer, Player* killed);
+        void OnPlayerLevelChanged(Player* player, uint8 oldLevel);
+        void OnPlayerFreeTalentPointsChanged(Player* player, uint32 newPoints);
+        void OnPlayerTalentsReset(Player* player, bool noCost);
+        void OnPlayerMoneyChanged(Player* player, int32& amount);
+        void OnGivePlayerXP(Player* player, uint32& amount, Unit* victim);
+        void OnPlayerReputationChange(Player* player, uint32 factionID, int32& standing, bool incremental);
+        void OnPlayerReputationRankChange(Player* player, uint32 factionID, ReputationRank newRank, ReputationRank oldRank, bool increased);
+        void OnPlayerLearnSpell(Player* player, uint32 spellID);
+        void OnPlayerForgotSpell(Player* player, uint32 spellID);
+        void OnPlayerDuelRequest(Player* target, Player* challenger);
+        void OnPlayerDuelStart(Player* player1, Player* player2);
+        void OnPlayerDuelEnd(Player* winner, Player* loser, DuelCompleteType type);
+        void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg);
+        void OnBeforeSendChatMessage(Player* player, uint32& type, uint32& lang, std::string& msg);
+        void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Player* receiver);
+        void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Group* group);
+        void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Guild* guild);
+        void OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Channel* channel);
+        void OnPlayerEmote(Player* player, uint32 emote);
+        void OnPlayerTextEmote(Player* player, uint32 textEmote, uint32 emoteNum, uint64 guid);
+        void OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck);
+        void OnPlayerLogin(Player* player);
+        void OnPlayerLoadFromDB(Player* player);
+        void OnPlayerLogout(Player* player);
+        void OnPlayerCreate(Player* player);
+        void OnPlayerSave(Player* player);
+        void OnPlayerDelete(uint64 guid, uint32 accountId);
+        void OnPlayerFailedDelete(uint64 guid, uint32 accountId);
+        void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent);
+        void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
+        void OnPlayerUpdateArea(Player* player, uint32 oldArea, uint32 newArea);
+        bool OnBeforePlayerTeleport(Player* player, uint32 mapid, float x, float y, float z, float orientation, uint32 options, Unit *target);
+        void OnPlayerUpdateFaction(Player* player);
+        void OnPlayerAddToBattleground(Player* player, Battleground* bg);
+        void OnPlayerRemoveFromBattleground(Player* player, Battleground* bg);
+        void OnAchievementComplete(Player *player, AchievementEntry const* achievement);
+        void OnCriteriaProgress(Player *player, AchievementCriteriaEntry const* criteria);
+        void OnAchievementSave(SQLTransaction& trans, Player* player, uint16 achiId, CompletedAchievementData achiData);
+        void OnCriteriaSave(SQLTransaction& trans, Player* player, uint16 critId, CriteriaProgress criteriaData);
+        void OnGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action);
+        void OnGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, const char* code);
+        void OnPlayerBeingCharmed(Player* player, Unit* charmer, uint32 oldFactionId, uint32 newFactionId);
+        void OnAfterPlayerSetVisibleItemSlot(Player* player, uint8 slot, Item *item);
+        void OnAfterPlayerMoveItemFromInventory(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
+        void OnEquip(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
+        void OnPlayerJoinBG(Player* player);
+        void OnPlayerJoinArena(Player* player);
+        void GetCustomGetArenaTeamId(const Player* player, uint8 slot, uint32& teamID) const;
+        void GetCustomArenaPersonalRating(const Player* player, uint8 slot, uint32& rating) const;
+        void OnGetMaxPersonalArenaRatingRequirement(const Player* player, uint32 minSlot, uint32& maxArenaRating) const;
+        void OnLootItem(Player* player, Item* item, uint32 count, uint64 lootguid);
+        void OnCreateItem(Player* player, Item* item, uint32 count);
+        void OnQuestRewardItem(Player* player, Item* item, uint32 count);
+        void OnBeforeBuyItemFromVendor(Player * player, uint64 vendorguid, uint32 vendorslot, uint32 &item, uint8 count, uint8 bag, uint8 slot);
+        void OnAfterStoreOrEquipNewItem(Player* player, uint32 vendorslot, uint32 &item, uint8 count, uint8 bag, uint8 slot, ItemTemplate const* pProto, Creature* pVendor, VendorItem const* crItem, bool bStore);
+        void OnAfterUpdateMaxPower(Player* player, Powers& power, float& value);
+        void OnAfterUpdateMaxHealth(Player* player, float& value);
+        void OnBeforeUpdateAttackPowerAndDamage(Player* player, float& level, float& val2, bool ranged);
+        void OnAfterUpdateAttackPowerAndDamage(Player* player, float& level, float& base_attPower, float& attPowerMod, float& attPowerMultiplier, bool ranged);
+        void OnBeforeInitTalentForLevel(Player* player, uint8& level, uint32& talentPointsForLevel);
+        void OnFirstLogin(Player* player);
+        void OnPlayerCompleteQuest(Player* player, Quest const* quest);
+        bool CanJoinInBattlegroundQueue(Player* player, uint64 BattlemasterGuid, BattlegroundTypeId BGTypeID, uint8 joinAsGroup, GroupJoinBattlegroundResult& err);
+        void OnBeforeTempSummonInitStats(Player* player, TempSummon* tempSummon, uint32& duration);
+        void OnBeforeGuardianInitStatsForLevel(Player* player, Guardian* guardian, CreatureTemplate const* cinfo, PetType& petType);
+        void OnAfterGuardianInitStatsForLevel(Player* player, Guardian* guardian);
+        void OnBeforeLoadPetFromDB(Player* player, uint32& petentry, uint32& petnumber, bool& current, bool& forceLoadFromDB);
 
 public: /* AccountScript */
 
@@ -1572,7 +1599,15 @@ public: /* BGScript */
     void OnCheckNormalMatch(BattlegroundQueue* queue, uint32& Coef, Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32& minPlayers, uint32& maxPlayers);
     bool CanSendMessageQueue(BattlegroundQueue* queue, Player* leader, Battleground* bg, PvPDifficultyEntry const* bracketEntry);
 
-public: /* SpellSC */
+    public: /* Arena Team Script */
+
+        void OnGetSlotByType(const uint32 type, uint8& slot);
+        void OnGetArenaPoints(ArenaTeam* at, float& points);
+        void OnArenaTypeIDToQueueID(const BattlegroundTypeId bgTypeId, const uint8 arenaType, uint32& queueTypeID);
+        void OnArenaQueueIdToArenaType(const BattlegroundQueueTypeId bgQueueTypeId, uint8& ArenaType);
+        void OnSetArenaMaxPlayersPerTeam(const uint8 arenaType, uint32& maxPlayerPerTeam);
+
+    public: /* SpellSC */
 
     void OnCalcMaxDuration(Aura const* aura, int32& maxDuration);
 
@@ -1633,69 +1668,64 @@ public:
         }
     }
 
-    static void AddALScripts()
-    {
-        for(ScriptVectorIterator it = ALScripts.begin(); it != ALScripts.end(); ++it)
-        {
-            TScript* const script = *it;
+        static void AddALScripts() {
+            for(ScriptVectorIterator it = ALScripts.begin(); it != ALScripts.end(); ++it) {
+                TScript* const script = *it;
 
-            script->checkValidity();
+                script->checkValidity();
 
-            if (script->IsDatabaseBound())
-            {
+                if (script->IsDatabaseBound()) {
 
-                if (!_checkMemory(script))
-                    return;
+                    if (!_checkMemory(script))
+                        return;
 
-                // Get an ID for the script. An ID only exists if it's a script that is assigned in the database
-                // through a script name (or similar).
-                uint32 id = sObjectMgr->GetScriptId(script->GetName().c_str());
-                if (id)
-                {
-                    // Try to find an existing script.
-                    bool existing = false;
-                    for (ScriptMapIterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
+                    // Get an ID for the script. An ID only exists if it's a script that is assigned in the database
+                    // through a script name (or similar).
+                    uint32 id = sObjectMgr->GetScriptId(script->GetName().c_str());
+                    if (id)
                     {
-                        // If the script names match...
-                        if (it->second->GetName() == script->GetName())
+                        // Try to find an existing script.
+                        bool existing = false;
+                        for (ScriptMapIterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
                         {
-                            // ... It exists.
-                            existing = true;
-                            break;
+                            // If the script names match...
+                            if (it->second->GetName() == script->GetName())
+                            {
+                                // ... It exists.
+                                existing = true;
+                                break;
+                            }
                         }
-                    }
 
-                    // If the script isn't assigned -> assign it!
-                    if (!existing)
-                    {
-                        ScriptPointerList[id] = script;
-                        sScriptMgr->IncrementScriptCount();
+                        // If the script isn't assigned -> assign it!
+                        if (!existing)
+                        {
+                            ScriptPointerList[id] = script;
+                            sScriptMgr->IncrementScriptCount();
+                        }
+                        else
+                        {
+                            // If the script is already assigned -> delete it!
+                            sLog->outError("Script named '%s' is already assigned (two or more scripts have the same name), so the script can't work, aborting...",
+                                script->GetName().c_str());
+
+                            ABORT(); // Error that should be fixed ASAP.
+                        }
                     }
                     else
                     {
-                        // If the script is already assigned -> delete it!
-                        sLog->outError("Script named '%s' is already assigned (two or more scripts have the same name), so the script can't work, aborting...",
-                                       script->GetName().c_str());
-
-                        ABORT(); // Error that should be fixed ASAP.
+                        // The script uses a script name from database, but isn't assigned to anything.
+                        if (script->GetName().find("Smart") == std::string::npos)
+                            sLog->outErrorDb("Script named '%s' is not assigned in the database.",
+                                script->GetName().c_str());
                     }
+                } else {
+                    // We're dealing with a code-only script; just add it.
+                    ScriptPointerList[_scriptIdCounter++] = script;
+                    sScriptMgr->IncrementScriptCount();
                 }
-                else
-                {
-                    // The script uses a script name from database, but isn't assigned to anything.
-                    if (script->GetName().find("Smart") == std::string::npos)
-                        sLog->outErrorDb("Script named '%s' is not assigned in the database.",
-                                         script->GetName().c_str());
-                }
-            }
-            else
-            {
-                // We're dealing with a code-only script; just add it.
-                ScriptPointerList[_scriptIdCounter++] = script;
-                sScriptMgr->IncrementScriptCount();
             }
         }
-    }
 
     // Gets a script by its ID (assigned by ObjectMgr).
     static TScript* GetScriptById(uint32 id)

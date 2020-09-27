@@ -1932,22 +1932,19 @@ public:
     uint32 GetGuildIdInvited() { return m_GuildIdInvited; }
     static void RemovePetitionsAndSigns(uint64 guid, uint32 type);
 
-    // Arena Team
-    void SetInArenaTeam(uint32 ArenaTeamId, uint8 slot, uint8 type)
-    {
-        SetArenaTeamInfoField(slot, ARENA_TEAM_ID, ArenaTeamId);
-        SetArenaTeamInfoField(slot, ARENA_TEAM_TYPE, type);
-    }
-    void SetArenaTeamInfoField(uint8 slot, ArenaTeamInfoType type, uint32 value)
-    {
-        SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + type, value);
-    }
-    static uint32 GetArenaTeamIdFromDB(uint64 guid, uint8 slot);
-    static void LeaveAllArenaTeams(uint64 guid);
-    uint32 GetArenaTeamId(uint8 slot) const { return GetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + ARENA_TEAM_ID); }
-    uint32 GetArenaPersonalRating(uint8 slot) const { return GetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + ARENA_TEAM_PERSONAL_RATING); }
-    void SetArenaTeamIdInvited(uint32 ArenaTeamId) { m_ArenaTeamIdInvited = ArenaTeamId; }
-    uint32 GetArenaTeamIdInvited() { return m_ArenaTeamIdInvited; }
+        // Arena Team
+        void SetInArenaTeam(uint32 ArenaTeamId, uint8 slot, uint8 type)
+        {
+            SetArenaTeamInfoField(slot, ARENA_TEAM_ID, ArenaTeamId);
+            SetArenaTeamInfoField(slot, ARENA_TEAM_TYPE, type);
+        }
+        void SetArenaTeamInfoField(uint8 slot, ArenaTeamInfoType type, uint32 value);
+        static uint32 GetArenaTeamIdFromDB(uint64 guid, uint8 slot);
+        static void LeaveAllArenaTeams(uint64 guid);
+        uint32 GetArenaTeamId(uint8 slot) const;
+        uint32 GetArenaPersonalRating(uint8 slot) const;
+        void SetArenaTeamIdInvited(uint32 ArenaTeamId) { m_ArenaTeamIdInvited = ArenaTeamId; }
+        uint32 GetArenaTeamIdInvited() { return m_ArenaTeamIdInvited; }
 
     Difficulty GetDifficulty(bool isRaid) const { return isRaid ? m_raidDifficulty : m_dungeonDifficulty; }
     Difficulty GetDungeonDifficulty() const { return m_dungeonDifficulty; }
