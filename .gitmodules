@@ -25,3 +25,6 @@
 [submodule "modules/mod-autobalance"]
 	path = modules/mod-autobalance
 	url = git@github.com:azerothcore/mod-autobalance.git
+[submodule "modules/mod-1v1-arena"]
+	path = modules/mod-1v1-arena
+	url = git@github.com:peti446/mod-1v1-arena.git
