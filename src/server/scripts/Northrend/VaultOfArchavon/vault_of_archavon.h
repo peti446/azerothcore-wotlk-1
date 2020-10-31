@@ -38,4 +38,22 @@ enum AchievementSpells
     SPELL_STONED_AURA                       = 63080,
 };
 
+enum InstanceEvents
+{
+    EVENT_CONFIGURE_INSTANCE = 1,
+    EVENT_INSTANCE_RESET_CHECK = 2
+};
+
+enum RequiredAchievementsIds
+{
+    ACHIEVEMENT_NAXXRAMAS_10 = 576,
+    ACHIEVEMENT_NAXXRAMAS_25 = 577,
+
+    ACHIEVEMENT_ULDUAR_KEEPERS_10 = 2890,
+    ACHIEVEMENT_ULDUAR_KEEPERS_25 = 2891,
+
+    ACHIEVEMENT_TOC_10 = 3917,
+    ACHIEVEMENT_TOC_25 = 3916,
+};
+
 #endif
