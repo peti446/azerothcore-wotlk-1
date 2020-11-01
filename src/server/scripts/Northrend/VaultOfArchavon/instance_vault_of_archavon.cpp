@@ -34,19 +34,18 @@ public:
         {
             memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
             memset(&bossGUIDs, 0, sizeof(bossGUIDs));
+            memset(&bossAvailable, 1, sizeof(bossAvailable));
 
             ArchavonDeath = 0;
             EmalonDeath = 0;
             KoralonDeath = 0;
             stoned = false;
-            KoralonAvailable = true;
-            ToravonAvailable = true;
 
-            _events.ScheduleEvent(EVENT_CONFIGURE_INSTANCE, 60 * IN_MILLISECONDS);
+            _events.ScheduleEvent(EVENT_CONFIGURE_INSTANCE, 10 * IN_MILLISECONDS);
             _events.ScheduleEvent(EVENT_INSTANCE_RESET_CHECK, 60 * IN_MILLISECONDS);
         }
 
-        void OnPlayerEnter(Player*)
+        void OnPlayerEnter(Player* p)
         {
             if (stoned)
             {
@@ -56,6 +55,11 @@ public:
                             cr->RemoveAllAuras();
 
                 stoned = false;
+            }
+
+            if (!p->IsGameMaster())
+            {
+                UpdateBossAvailability(p);
             }
         }
 
@@ -71,8 +75,8 @@ public:
                 switch (eventId)
                 {
                 case EVENT_CONFIGURE_INSTANCE:
-                    ManageBossAvailability();
-                    _events.RescheduleEvent(EVENT_CONFIGURE_INSTANCE, 60 * IN_MILLISECONDS);
+                    UpdateBossAvailability();
+                    _events.RescheduleEvent(EVENT_CONFIGURE_INSTANCE, 30 * IN_MILLISECONDS);
                     break;
                 case EVENT_INSTANCE_RESET_CHECK:
                     _events.RescheduleEvent(EVENT_INSTANCE_RESET_CHECK, 60 * IN_MILLISECONDS);
@@ -85,14 +89,22 @@ public:
                             {
                                 Map::PlayerList const& PlayerList = instance->GetPlayers();
                                 if (!PlayerList.isEmpty())
+                                {
                                     for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                                    {
                                         if (Player* player = i->GetSource())
+                                        {
                                             player->MonsterTextEmote("This instance will reset in 15 minutes.", 0, true);
+                                        }
+                                    }
+                                }
                             }
                             else if (bf->GetTimer() <= (10 * MINUTE * IN_MILLISECONDS) && bf->GetTimer() >= (9 * MINUTE * IN_MILLISECONDS))
                             {
                                 for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+                                {
                                     if (Creature* cr = instance->GetCreature(bossGUIDs[i]))
+                                    {
                                         if (!cr->IsInCombat())
                                         {
                                             cr->RemoveAllAuras();
@@ -102,29 +114,51 @@ public:
                                                 aur->SetDuration(60 * MINUTE * IN_MILLISECONDS);
                                             }
                                         }
-
+                                    }
+                                }
                                 stoned = true;
                             }
                             else if (bf->GetTimer() <= (2 * MINUTE * IN_MILLISECONDS) && bf->GetTimer() > (MINUTE * IN_MILLISECONDS))
                             {
                                 Map::PlayerList const& PlayerList = instance->GetPlayers();
                                 if (!PlayerList.isEmpty())
+                                {
                                     for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                                    {
                                         if (Player* player = i->GetSource())
+                                        {
                                             player->MonsterTextEmote("This instance is about to reset. Prepare to be removed.", 0, true);
+                                        }
+                                    }
+                                }
                             }
                             else if (bf->GetTimer() <= MINUTE * IN_MILLISECONDS)
                             {
                                 for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+                                {
                                     if (Creature* cr = instance->GetCreature(bossGUIDs[i]))
+                                    {
                                         if (cr->IsInCombat() && cr->AI())
+                                        {
                                             cr->AI()->EnterEvadeMode();
+                                        }
+                                    }
+                                }
 
                                 Map::PlayerList const& PlayerList = instance->GetPlayers();
                                 if (!PlayerList.isEmpty())
+                                {
                                     for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                                    {
                                         if (Player* player = i->GetSource())
-                                            player->TeleportTo(player->m_homebindMapId, player->m_homebindX, player->m_homebindY, player->m_homebindZ, player->GetOrientation());
+                                        {
+                                            if (!player->IsGameMaster())
+                                            {
+                                                player->TeleportTo(player->m_homebindMapId, player->m_homebindX, player->m_homebindY, player->m_homebindZ, player->GetOrientation());
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -197,13 +231,13 @@ public:
                 switch (type)
                 {
                 case EVENT_ARCHAVON:
-                    ArchavonDeath = time(NULL);
+                    ArchavonDeath = time(nullptr);
                     break;
                 case EVENT_EMALON:
-                    EmalonDeath = time(NULL);
+                    EmalonDeath = time(nullptr);
                     break;
                 case EVENT_KORALON:
-                    KoralonDeath = time(NULL);
+                    KoralonDeath = time(nullptr);
                     break;
                 default:
                     return;
@@ -276,49 +310,75 @@ public:
                 OUT_LOAD_INST_DATA_FAIL;
         }
 
-        bool IsThereIntruder(uint8 bossId)
+        //If Player is not passed it will check all player until somebody does not have the achievement
+        //If player is passed it will only check the achievement over that player and return true if player does not have it
+        bool CheckBossRequirements(uint8 bossId, Player* p = nullptr)
         {
             uint32 achievementToCheck = 0;
             switch (bossId)
             {
-            case 2: // Koralon
+            case EVENT_EMALON:
+                achievementToCheck = instance->Is25ManRaid() ? ACHIEVEMENT_NAXXRAMAS_25 : ACHIEVEMENT_NAXXRAMAS_10;
+                break;
+            case EVENT_KORALON:
                 achievementToCheck = instance->Is25ManRaid() ? ACHIEVEMENT_ULDUAR_KEEPERS_25 : ACHIEVEMENT_ULDUAR_KEEPERS_10;
                 break;
-            case 3: // Toravon
+            case EVENT_TORAVON:
                 achievementToCheck = instance->Is25ManRaid() ? ACHIEVEMENT_TOC_25 : ACHIEVEMENT_TOC_10;
                 break;
+            }
+
+            if (achievementToCheck == 0)
+                return true;
+
+            //If we are passing a player lets just check that player
+            if (p)
+            {
+                return p->HasAchieved(achievementToCheck);
             }
 
             Map::PlayerList const& players = instance->GetPlayers();
             for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
             {
                 if (!itr->GetSource()->IsGameMaster())
+                {
                     if (Player* player = itr->GetSource())
                     {
                         if (!player->HasAchieved(achievementToCheck))
-                            return true;
+                            return false;
 
                     }
+                }
             }
 
-            return false;
+            return true;
         }
 
-        void ManageBossAvailability()
+        void UpdateBossVisibility(uint8 bossID, bool visible)
         {
-            //Koralon
-            if (Creature* pKoralon = instance->GetCreature(bossGUIDs[EVENT_KORALON]))
+            if (Creature* boss = instance->GetCreature(bossGUIDs[bossID]))
             {
-                if (pKoralon->IsAlive())
+                if (boss->IsAlive())
                 {
-                    if (IsThereIntruder(EVENT_KORALON))
+                    if (visible)
                     {
-                        if (KoralonAvailable)
+                        if (!bossAvailable[bossID])
+                        {
+                            bossAvailable[bossID] = true;
+                            boss->SetVisible(true);
+                            boss->setFaction(16);
+                            boss->SetReactState(REACT_AGGRESSIVE);
+                            boss->AI()->Reset();
+                        }
+                    }
+                    else
+                    {
+                        if (bossAvailable[bossID])
                         {
                             // Force an encounter ending.
-                            if (pKoralon->IsInCombat())
+                            if (boss->IsInCombat())
                             {
-                                pKoralon->CombatStop();
+                                boss->CombatStop();
 
                                 Map::PlayerList const& players = instance->GetPlayers();
                                 for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
@@ -328,66 +388,32 @@ public:
                                 }
                             }
 
-                            pKoralon->SetVisible(false);
-                            pKoralon->setFaction(2007);
-                            pKoralon->SetReactState(REACT_PASSIVE);
-                            KoralonAvailable = false;
-                        }
-                    }
-                    else
-                    {
-                        if (!KoralonAvailable)
-                        {
-                            KoralonAvailable = true;
-                            pKoralon->SetVisible(true);
-                            pKoralon->setFaction(16);
-                            pKoralon->SetReactState(REACT_AGGRESSIVE);
-                            pKoralon->AI()->Reset();
+                            boss->SetVisible(false);
+                            boss->setFaction(2007);
+                            boss->SetReactState(REACT_PASSIVE);
+                            bossAvailable[bossID] = false;
                         }
                     }
                 }
             }
+        }
 
-            //Toravon
-            if (Creature* pToravon = instance->GetCreature(bossGUIDs[EVENT_TORAVON]))
+        void UpdateBossAvailability()
+        {
+            //If we want to add more, just change the range and add the achievements in the function above (IsThereIntruder)
+            for (uint8 bossID = EVENT_EMALON; bossID < MAX_ENCOUNTER; bossID++)
             {
-                if (pToravon->IsAlive())
-                {
-                    if (IsThereIntruder(EVENT_TORAVON))
-                    {
-                        if (ToravonAvailable)
-                        {
-                            // Force an encounter ending.
-                            if (pToravon->IsInCombat())
-                            {
-                                pToravon->CombatStop();
+                UpdateBossVisibility(bossID, CheckBossRequirements(bossID));
+            }
+        }
 
-                                Map::PlayerList const& players = instance->GetPlayers();
-                                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-                                {
-                                    if (itr->GetSource()->IsAlive() && itr->GetSource()->IsInCombat())
-                                        itr->GetSource()->CombatStop();
-                                }
-                            }
-
-                            pToravon->SetVisible(false);
-                            pToravon->setFaction(2007);
-                            pToravon->SetReactState(REACT_PASSIVE);
-                            ToravonAvailable = false;
-                        }
-                    }
-                    else
-                    {
-                        if (!ToravonAvailable)
-                        {
-                            ToravonAvailable = true;
-                            pToravon->SetVisible(true);
-                            pToravon->setFaction(16);
-                            pToravon->SetReactState(REACT_AGGRESSIVE);
-                            pToravon->AI()->Reset();
-                        }
-                    }
-                }
+        // Specific for testing only one player used when a player joins the instance so we do not need to check all players again allowing bosses to be hidden faster
+        void UpdateBossAvailability(Player* p)
+        {
+            for (uint8 bossID = EVENT_EMALON; bossID < MAX_ENCOUNTER; bossID++)
+            {
+                if(bossAvailable[bossID])
+                    UpdateBossVisibility(bossID, CheckBossRequirements(bossID, p));
             }
         }
 
@@ -400,9 +426,7 @@ public:
 
         uint32 m_auiEncounter[MAX_ENCOUNTER];
         uint64 bossGUIDs[MAX_ENCOUNTER];
-
-        bool KoralonAvailable;
-        bool ToravonAvailable;
+        bool bossAvailable[MAX_ENCOUNTER];
         EventMap _events;
     };
 
