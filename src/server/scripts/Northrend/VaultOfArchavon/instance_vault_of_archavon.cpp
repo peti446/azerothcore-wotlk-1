@@ -35,13 +35,13 @@ public:
             memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
             memset(&bossGUIDs, 0, sizeof(bossGUIDs));
             memset(&bossAvailable, 1, sizeof(bossAvailable));
+            memset(&AmountPlayerWithoutAchievement, 0, sizeof(AmountPlayerWithoutAchievement));
 
             ArchavonDeath = 0;
             EmalonDeath = 0;
             KoralonDeath = 0;
             stoned = false;
 
-            _events.ScheduleEvent(EVENT_CONFIGURE_INSTANCE, 10 * IN_MILLISECONDS);
             _events.ScheduleEvent(EVENT_INSTANCE_RESET_CHECK, 60 * IN_MILLISECONDS);
         }
 
@@ -57,9 +57,24 @@ public:
                 stoned = false;
             }
 
-            if (!p->IsGameMaster())
+            for (uint8 bossID = EVENT_EMALON; bossID < MAX_ENCOUNTER; bossID++)
             {
-                UpdateBossAvailability(p);
+                const bool playerMeetsRequirements = DoesPlayerMeetBossRequirements(bossID, p);
+                AmountPlayerWithoutAchievement[bossID] += playerMeetsRequirements ? 0 : 1;
+                UpdateBossVisibility(bossID, AmountPlayerWithoutAchievement[bossID] == 0);
+            }
+        }
+
+        void OnPlayerLeave(Player* p)
+        {
+            for (uint8 bossID = EVENT_EMALON; bossID < MAX_ENCOUNTER; bossID++)
+            {
+                if (!bossAvailable[bossID])
+                {
+                    const bool playerMeetsRequirements = DoesPlayerMeetBossRequirements(bossID, p);
+                    AmountPlayerWithoutAchievement[bossID] -= playerMeetsRequirements ? 0 : 1;
+                    UpdateBossVisibility(bossID, AmountPlayerWithoutAchievement[bossID] == 0);
+                }
             }
         }
 
@@ -74,10 +89,6 @@ public:
             {
                 switch (eventId)
                 {
-                case EVENT_CONFIGURE_INSTANCE:
-                    UpdateBossAvailability();
-                    _events.RescheduleEvent(EVENT_CONFIGURE_INSTANCE, 30 * IN_MILLISECONDS);
-                    break;
                 case EVENT_INSTANCE_RESET_CHECK:
                     _events.RescheduleEvent(EVENT_INSTANCE_RESET_CHECK, 60 * IN_MILLISECONDS);
 
@@ -310,9 +321,8 @@ public:
                 OUT_LOAD_INST_DATA_FAIL;
         }
 
-        //If Player is not passed it will check all player until somebody does not have the achievement
-        //If player is passed it will only check the achievement over that player and return true if player does not have it
-        bool CheckBossRequirements(uint8 bossId, Player* p = nullptr)
+
+        bool DoesPlayerMeetBossRequirements(uint8 bossId, Player* p)
         {
             uint32 achievementToCheck = 0;
             switch (bossId)
@@ -331,27 +341,12 @@ public:
             if (achievementToCheck == 0)
                 return true;
 
-            //If we are passing a player lets just check that player
             if (p)
             {
-                return p->HasAchieved(achievementToCheck);
+                return p->HasAchieved(achievementToCheck) || p->IsGameMaster();
             }
 
-            Map::PlayerList const& players = instance->GetPlayers();
-            for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-            {
-                if (!itr->GetSource()->IsGameMaster())
-                {
-                    if (Player* player = itr->GetSource())
-                    {
-                        if (!player->HasAchieved(achievementToCheck))
-                            return false;
-
-                    }
-                }
-            }
-
-            return true;
+            return false;
         }
 
         void UpdateBossVisibility(uint8 bossID, bool visible)
@@ -398,25 +393,6 @@ public:
             }
         }
 
-        void UpdateBossAvailability()
-        {
-            //If we want to add more, just change the range and add the achievements in the function above (IsThereIntruder)
-            for (uint8 bossID = EVENT_EMALON; bossID < MAX_ENCOUNTER; bossID++)
-            {
-                UpdateBossVisibility(bossID, CheckBossRequirements(bossID));
-            }
-        }
-
-        // Specific for testing only one player used when a player joins the instance so we do not need to check all players again allowing bosses to be hidden faster
-        void UpdateBossAvailability(Player* p)
-        {
-            for (uint8 bossID = EVENT_EMALON; bossID < MAX_ENCOUNTER; bossID++)
-            {
-                if(bossAvailable[bossID])
-                    UpdateBossVisibility(bossID, CheckBossRequirements(bossID, p));
-            }
-        }
-
 
     private:
         time_t ArchavonDeath;
@@ -427,6 +403,7 @@ public:
         uint32 m_auiEncounter[MAX_ENCOUNTER];
         uint64 bossGUIDs[MAX_ENCOUNTER];
         bool bossAvailable[MAX_ENCOUNTER];
+        uint8 AmountPlayerWithoutAchievement[MAX_ENCOUNTER];
         EventMap _events;
     };
 

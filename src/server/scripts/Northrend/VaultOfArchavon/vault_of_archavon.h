@@ -40,8 +40,7 @@ enum AchievementSpells
 
 enum InstanceEvents
 {
-    EVENT_CONFIGURE_INSTANCE = 1,
-    EVENT_INSTANCE_RESET_CHECK = 2
+    EVENT_INSTANCE_RESET_CHECK = 1
 };
 
 enum RequiredAchievementsIds
