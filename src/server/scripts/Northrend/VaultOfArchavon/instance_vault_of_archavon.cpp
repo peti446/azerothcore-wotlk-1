@@ -57,12 +57,30 @@ public:
                 stoned = false;
             }
 
+            std::string achievementsSTR;
+            std::string bossNamesSTR;
             for (uint8 bossID = EVENT_EMALON; bossID < MAX_ENCOUNTER; bossID++)
             {
                 const bool playerMeetsRequirements = DoesPlayerMeetBossRequirements(bossID, p);
+                if (!playerMeetsRequirements)
+                {
+                    if (AchievementEntry const* achievementEntry = sAchievementStore.LookupEntry(GetAchievementForBoss(bossID)))
+                    {
+                        achievementsSTR += achievementsSTR.size() != 0 ? "," : "";
+                        achievementsSTR += std::string(*achievementEntry->name);
+                        if (Creature* boss = instance->GetCreature(bossGUIDs[bossID]))
+                        {
+                            bossNamesSTR += bossNamesSTR.size() != 0 ? "," : "";
+                            bossNamesSTR += boss->GetName();
+                        }
+                    }
+                }
                 AmountPlayerWithoutAchievement[bossID] += playerMeetsRequirements ? 0 : 1;
                 UpdateBossVisibility(bossID, AmountPlayerWithoutAchievement[bossID] == 0);
             }
+
+            if (achievementsSTR.size() > 0 && bossNamesSTR.size() > 0)
+                DoSendNotifyToInstance("%s does not have %s achievement(s). Boss(es) that won't be available: %s", p->GetName(), achievementsSTR, bossNamesSTR);
         }
 
         void OnPlayerLeave(Player* p)
@@ -321,23 +339,24 @@ public:
                 OUT_LOAD_INST_DATA_FAIL;
         }
 
+        uint32 GetAchievementForBoss(uint8 bossID)
+        {
+            switch (bossID)
+            {
+            case EVENT_EMALON:
+                return instance->Is25ManRaid() ? ACHIEVEMENT_NAXXRAMAS_25 : ACHIEVEMENT_NAXXRAMAS_10;
+            case EVENT_KORALON:
+                return instance->Is25ManRaid() ? ACHIEVEMENT_ULDUAR_KEEPERS_25 : ACHIEVEMENT_ULDUAR_KEEPERS_10;
+            case EVENT_TORAVON:
+                return instance->Is25ManRaid() ? ACHIEVEMENT_TOC_25 : ACHIEVEMENT_TOC_10;
+            }
+
+            return 0;
+        }
 
         bool DoesPlayerMeetBossRequirements(uint8 bossId, Player* p)
         {
-            uint32 achievementToCheck = 0;
-            switch (bossId)
-            {
-            case EVENT_EMALON:
-                achievementToCheck = instance->Is25ManRaid() ? ACHIEVEMENT_NAXXRAMAS_25 : ACHIEVEMENT_NAXXRAMAS_10;
-                break;
-            case EVENT_KORALON:
-                achievementToCheck = instance->Is25ManRaid() ? ACHIEVEMENT_ULDUAR_KEEPERS_25 : ACHIEVEMENT_ULDUAR_KEEPERS_10;
-                break;
-            case EVENT_TORAVON:
-                achievementToCheck = instance->Is25ManRaid() ? ACHIEVEMENT_TOC_25 : ACHIEVEMENT_TOC_10;
-                break;
-            }
-
+            uint32 achievementToCheck = GetAchievementForBoss(bossId);
             if (achievementToCheck == 0)
                 return true;
 
@@ -364,6 +383,8 @@ public:
                             boss->setFaction(16);
                             boss->SetReactState(REACT_AGGRESSIVE);
                             boss->AI()->Reset();
+
+                            DoSendNotifyToInstance("Boss %s spawned.", boss->GetName());
                         }
                     }
                     else
@@ -387,6 +408,8 @@ public:
                             boss->setFaction(2007);
                             boss->SetReactState(REACT_PASSIVE);
                             bossAvailable[bossID] = false;
+
+                            DoSendNotifyToInstance("Boss %s de-spawned because one or more players do not have completed the required achievements.", boss->GetName());
                         }
                     }
                 }
@@ -410,6 +433,16 @@ public:
     InstanceScript* GetInstanceScript(InstanceMap* map) const
     {
         return new instance_vault_of_archavon_InstanceMapScript(map);
+    }
+
+
+    void OnPlayerLeave(InstanceMap* instance, Player* p) override
+    {
+        InstanceMapScript::OnPlayerLeave(instance, p);
+        if (instance_vault_of_archavon_InstanceMapScript* script = dynamic_cast<instance_vault_of_archavon_InstanceMapScript*>(instance->GetInstanceScript()))
+        {
+            script->OnPlayerLeave(p);
+        }
     }
 };
 
