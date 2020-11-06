@@ -80,7 +80,7 @@ public:
             }
 
             if (achievementsSTR.size() > 0 && bossNamesSTR.size() > 0)
-                DoSendNotifyToInstance("%s does not have %s achievement(s). Boss(es) that won't be available: %s", p->GetName(), achievementsSTR, bossNamesSTR);
+                DoSendNotifyToInstance("%s does not have %s achievement(s). Boss(es) that won't be available: %s", p->GetName().c_str(), achievementsSTR.c_str(), bossNamesSTR.c_str());
         }
 
         void OnPlayerLeave(Player* p)
@@ -384,7 +384,7 @@ public:
                             boss->SetReactState(REACT_AGGRESSIVE);
                             boss->AI()->Reset();
 
-                            DoSendNotifyToInstance("Boss %s spawned.", boss->GetName());
+                            DoSendNotifyToInstance("Boss %s spawned.", boss->GetName().c_str());
                         }
                     }
                     else
@@ -409,7 +409,7 @@ public:
                             boss->SetReactState(REACT_PASSIVE);
                             bossAvailable[bossID] = false;
 
-                            DoSendNotifyToInstance("Boss %s de-spawned because one or more players do not have completed the required achievements.", boss->GetName());
+                            DoSendNotifyToInstance("Boss %s de-spawned because one or more players do not have completed the required achievements.", boss->GetName().c_str());
                         }
                     }
                 }
